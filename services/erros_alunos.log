@@ -1,0 +1,5 @@
+[LARA SOPHIA FARIAS TENORIO] - total is not defined
+[ANA ISABEL PEREIRA DA SILVA] - total is not defined
+[BRYAN MIGUEL SIQUEIRA DA SILVA] - page.waitForSelector: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('//td[contains(text(), "BRYAN MIGUEL SIQUEIRA DA SILVA")]/following-sibling::td/a[contains(@href, "/Pessoa/Gerenciar/") and contains(@class, "btn-info")]') to be visible[22m

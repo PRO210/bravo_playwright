@@ -1,0 +1,64 @@
+{
+  "cookies": [
+    {
+      "name": "PHPSESSID",
+      "value": "p8fhr0o4ts4i66e1qoc4123mf0",
+      "domain": "web02.sipf.com.br",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_gid",
+      "value": "GA1.3.283353296.1753036203",
+      "domain": ".sipf.com.br",
+      "path": "/",
+      "expires": 1753122615,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_gat",
+      "value": "1",
+      "domain": ".sipf.com.br",
+      "path": "/",
+      "expires": 1753036263,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "usuario_token",
+      "value": "eab34c35f815bdab0f6258583299fda0571a6670",
+      "domain": "web02.sipf.com.br",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_87LFWQ45HQ",
+      "value": "GS2.1.s1753036203$o1$g1$t1753036215$j48$l0$h0",
+      "domain": ".sipf.com.br",
+      "path": "/",
+      "expires": 1787596215.574621,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga",
+      "value": "GA1.1.1621462107.1753036203",
+      "domain": ".sipf.com.br",
+      "path": "/",
+      "expires": 1787596215.575518,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ]
+}
