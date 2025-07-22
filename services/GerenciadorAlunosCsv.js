@@ -67,7 +67,12 @@ export class GerenciadorAlunosCsv {
     for (let i = 0; i < this.alunosData.length; i++) {
       try {
         // Chamamos processarAluno, passando o aluno e o índice
-        await this.processarAluno(this.alunosData[i], i);
+        // await this.processarAluno(this.alunosData[i], i);
+        let NomeDoAluno = this.alunosData[i].NomeDoAluno;
+        let MAE = this.alunosData[i].MAE || '';
+        let NASC = this.alunosData[i].NASC || '';
+
+        await this.encontrarLinkInformarAluno(NomeDoAluno, MAE, NASC, this.page);
       } catch (erroAluno) {
         // Este catch pega erros inesperados lançados por processarAluno que não são tratados internamente.
         const nome = this.alunosData[i].NomeDoAluno;
@@ -113,7 +118,7 @@ export class GerenciadorAlunosCsv {
       await this.page.waitForLoadState('domcontentloaded'); // Espera a navegação para a página de gerenciamento.
 
       // Preenche o CPF (e NIS, se aplicável) usando as funções auxiliares.
-      await preencherCPF(this.page, CPF);
+      // await preencherCPF(this.page, CPF);
       // if (aluno.NIS) {
       //   await preencherNIS(this.page, aluno.NIS);
       // }
@@ -122,7 +127,7 @@ export class GerenciadorAlunosCsv {
       // Se o 'waitForSelector' para o link "Gerenciar" falhou (provavelmente por timeout),
       // verificamos se a mensagem de "nenhum registro" está visível.
       const noRecordsFound = await this.page.isVisible(noRecordsSelector);
-      
+
       if (noRecordsFound) {
         console.log(`⚠ Nenhum registro encontrado para o aluno: ${NomeDoAluno}. Pulando para o próximo.`);
         // Adiciona o nome do aluno à lista de não encontrados.
@@ -179,13 +184,130 @@ export class GerenciadorAlunosCsv {
     const erroPath = path.join(__dirname, 'erros_gerais_processamento.log');
     const conteudo = this.errosGeraisNoProcessamento.map(e => `[${e.nome}] - ${e.mensagem}`).join('\n');
 
-    try {     
+    try {
       await fs.writeFile(erroPath, conteudo, 'utf8');
       console.log(`\n⚠️ ${this.errosGeraisNoProcessamento.length} erros gerais de processamento salvos em: ${erroPath}`);
     } catch (writeError) {
       console.error(`\n❌ Erro ao tentar salvar o arquivo de log de erros gerais:`, writeError);
     }
   }
+
+  /**
+  * Navega para a lista de alunos, busca um aluno pelo nome na tabela
+  * e retorna o 'href' do botão "INFORMAR" associado a ele.
+  *
+  * @param {string} nomeDoAluno - O nome completo do aluno a ser buscado.
+  * @param {string} MAE - O nome completo da MAE do aluno a ser buscado.
+  * @param {string} NASC. - Data de nascimento do aluno a ser buscado.
+  * @param {import('playwright').Page} page - A instância da página do Playwright.
+  * @returns {Promise<string|null>} O 'href' do link "INFORMAR" se encontrado, ou null caso contrário.
+  */
+  async encontrarLinkInformarAluno(nomeDoAluno, MAE, NASC, page) {
+    const urlListaAlunos = 'https://web02.sipf.com.br/sipfalpha/Escolav3/Index/0/107';
+    const vejaAListaSelector = 'a.btn.btn-danger.btn-block[href="https://web02.sipf.com.br/sipfalpha/Escolav3/Index/0/107"]';
+    const tabelaAlunosSelector = '#DataTables_Table_0';
+
+    console.log(`🔎 Tentando acessar a lista de alunos para "${nomeDoAluno}"...`);
+
+    try {
+      // Tenta clicar no botão "VEJA A LISTA"
+      await page.click(vejaAListaSelector, { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded');
+      console.log('✅ Botão "VEJA A LISTA" clicado com sucesso.');
+    } catch (error) {
+      console.warn('⚠️ Botão "VEJA A LISTA" não encontrado ou erro ao clicar. Navegando diretamente...');
+      await page.goto(urlListaAlunos, { waitUntil: 'domcontentloaded' });
+    }
+
+    await page.waitForSelector(tabelaAlunosSelector);
+    await page.waitForLoadState('networkidle'); // Garante que a tabela está carregada
+
+    console.log(`Buscando aluno "${nomeDoAluno}" na tabela através da mãe...`);
+
+    // Seletor para encontrar o <td> que contém:
+    // 1. Um <strong> com o texto "Nome da mãe:"
+    // 2. Um nó de texto que contenha o 'nomeDaMaeParaBuscar'
+    // 3. E então, dentro desse mesmo <td>, o link <a> com 'INFORMAR'.
+    const linkInformarSelector = `//td[
+  ./strong[contains(text(), "Nome da mãe:")] and
+  ./text()[contains(., "${MAE}")]
+  ]//a[contains(@class, "btn-info") and contains(text(), "INFORMAR")]`;
+
+    let novaPagina; // Declare aqui para que possa ser acessada no bloco catch
+
+
+    // try {
+    //   const linkInformarElement = await page.waitForSelector(linkInformarSelector, { timeout: 10000 });
+
+    //   console.log(`🔗 Link "INFORMAR" encontrado para "${nomeDoAluno}" (através da mãe "${MAE}"). Clicando...`);
+    //   await linkInformarElement.click(); // Clica no link
+
+    //   const hrefInformar = await linkInformarElement.getAttribute('href');
+    //   console.log(`✔️ Clicou no link: ${hrefInformar}`);
+
+
+    //   return hrefInformar;
+
+    // } catch (error) {
+    //   console.warn(`❌ Link "INFORMAR" não encontrado para o aluno "${nomeDoAluno}" (através da mãe). Erro: ${error.message}`);
+    //   return null; // Retorna null se o link não for encontrado
+    // }
+    try {
+      // Usa Promise.all para clicar no link E esperar que a nova página seja aberta ao mesmo tempo
+      [novaPagina] = await Promise.all([
+        page.context().waitForEvent('page'), // Espera por um evento de criação de nova 'page' (aba/janela)
+        page.click(linkInformarSelector)     // Clica no link que dispara a abertura da nova aba
+      ]);
+
+      console.log(`✔️ Nova janela/aba aberta com URL: ${novaPagina.url()}`);
+
+      // É crucial esperar que a nova página carregue antes de interagir com ela
+      await novaPagina.waitForLoadState('networkidle'); // Garante que todos os recursos foram carregados
+
+      // --- AÇÕES NA NOVA JANELA/ABA ---
+      console.log("Preenchendo campo INEP na nova janela...");
+
+      // // 1. Encontrar e preencher o input do INEP
+      // const inepInputSelector = 'input[name="registros_cod_inep"]';
+      // await novaPagina.waitForSelector(inepInputSelector, { state: 'visible' }); // Espera o input estar visível
+      // await novaPagina.fill(inepInputSelector, INEP_DO_ALUNO); // Preenche o input com o valor do INEP
+
+      // console.log(`INEP "${INEP_DO_ALUNO}" preenchido.`);
+
+      // // 2. Clicar no botão "SALVAR ALTERAÇÃO"
+      // const salvarButtonSelector = 'button[type="submit"].btn.btn-lg.btn-info:has-text("SALVAR ALTERAÇÃO")';
+      // await novaPagina.waitForSelector(salvarButtonSelector, { state: 'visible' }); // Espera o botão estar visível
+      // await novaPagina.click(salvarButtonSelector); // Clica no botão
+
+      console.log("Botão 'SALVAR ALTERAÇÃO' clicado.");
+
+      // Opcional: Esperar por alguma confirmação de que a alteração foi salva (ex: mensagem de sucesso, redirecionamento)
+      // Isso é importante se o clique no botão salvar causa alguma mudança na página ou um toast.
+      // await novaPagina.waitForSelector('.alert-success', { state: 'visible', timeout: 5000 });
+      // Ou, se a página recarrega ou redireciona após salvar:
+      // await novaPagina.waitForNavigation({ waitUntil: 'networkidle' });
+
+        await page.waitForTimeout(3000);
+
+      // --- FECHAR A NOVA JANELA/ABA ---
+      console.log("Fechando a nova janela/aba...");
+      await novaPagina.close(); // Fecha a aba recém-aberta
+
+      console.log(`Retornou para a janela original: ${page.url()}`);
+
+      return { status: 'sucesso', mensagem: 'Dados preenchidos e janela fechada com sucesso.' };
+
+    } catch (error) {
+      console.warn(`❌ Erro ao interagir com a nova janela para o aluno "${nomeDoAluno}" (mãe "${MAE}"). Erro: ${error.message}`);
+      // Se a nova página foi aberta, mas houve um erro, tente fechá-la para evitar abas órfãs
+      if (novaPagina && !novaPagina.isClosed()) {
+        await novaPagina.close();
+      }
+      return { status: 'erro', mensagem: error.message };
+    }
+
+  };
+
 
   /**
    * Executa o fluxo completo de leitura do CSV e processamento dos alunos.

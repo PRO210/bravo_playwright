@@ -1,0 +1,5 @@
+Erro fatal: this.processarTodosAlunos is not a function
+TypeError: this.processarTodosAlunos is not a function
+    at GerenciadorAlunosCsv.executar (file:///home/casa/Workspace/playwrite/bravo_playwright/services/GerenciadorAlunosCsv.js:221:18)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async file:///home/casa/Workspace/playwrite/bravo_playwright/index.js:44:3

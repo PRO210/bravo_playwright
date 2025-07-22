@@ -19,7 +19,6 @@ import { GerenciadorAlunosCsv } from './services/GerenciadorAlunosCsv.js';
   await page.waitForTimeout(3000);
 
 
-
   console.log('Clicando em "Acessar o Sistema"...');
   await page.click('text="CLIQUE AQUI PARA ACESSAR"');
   await page.waitForTimeout(3000);
@@ -42,6 +41,7 @@ import { GerenciadorAlunosCsv } from './services/GerenciadorAlunosCsv.js';
     console.warn('Nenhum cookie foi encontrado após o login.');
   }
 
+ 
   await gerenciadorAlunosCsv.executar();
 
 
